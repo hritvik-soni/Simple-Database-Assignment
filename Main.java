@@ -54,7 +54,8 @@ class Main {
             return;
         }
 
-        try (PrintWriter metadataWriter = new PrintWriter(new FileWriter(METADATA_PATH, true))) {
+        try (PrintWriter metadataWriter = new PrintWriter(new FileWriter(METADATA_PATH, true));
+             PrintWriter dataWriter = new PrintWriter(new FileWriter(TABLE_DIR_PATH + File.separator + tableName + ".txt", true))) {
             metadataWriter.println(tableName + "," + columnsDefinition);
             System.out.println("Table created successfully: " + "table: " + tableName + " ,columns: " + columnsDefinition);
         } catch (IOException e) {
@@ -94,7 +95,7 @@ class Main {
             }
             else{
                 try (PrintWriter tableWriter = new PrintWriter(new FileWriter(TABLE_DIR_PATH + File.separator + tableName + ".txt", true))) {
-                    tableWriter.println(tableName + "," + value);
+                    tableWriter.println(value);
                     System.out.println("Values inserted successfully: " + "table: " + tableName + " , values: " + value);
                 } catch (IOException e) {
                     System.err.println("Error inserting into table: " + e.getMessage());
@@ -168,7 +169,7 @@ class Main {
            return;
        }
         for(File tableName : tableNames) {
-            System.out.println(tableName);
+//            System.out.println(tableName);
            String tname= tableName.toString().substring(7, tableName.toString().length()-4);
            try (BufferedReader metadataReader = new BufferedReader(new FileReader(METADATA_PATH));
                 BufferedReader dataReader = new BufferedReader(new FileReader(tableName.toString()))) {
@@ -203,18 +204,17 @@ class Main {
         System.out.println(columns);
 
         String dataLine;
-        boolean flag = false;
+        boolean flag = true;
         while ((dataLine = dataReader.readLine()) != null) {
             String[] dataParts = dataLine.split(",");
-
-            if (dataParts[0].equals(tname)) {
-                System.out.println("Data: " + Arrays.toString(Arrays.copyOfRange(dataParts, 1, dataParts.length)));
-                flag=true;
+            if (dataParts[0] != null) {
+                flag = false;
+                System.out.println("Data: " + Arrays.toString(dataParts));
             }
         }
-        if (!flag){
+         if (flag){
             System.out.println("Data: [null]");
-        }
+         }
     }
 
     private static boolean tableExists(String tableName) {
