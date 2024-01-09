@@ -2,13 +2,12 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 class Main {
     private static final String TABLE_DIR_PATH= "tables";
     private static final String METADATA_PATH = "metadata.txt";
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args)  {
         System.out.println("You can use the following commands only:");
         System.out.println("CREATE TABLE <table_name> (col1 <datatype>,col2 <datatype>,...) -- to create a table");
         System.out.println("INSERT INTO <table_name> VALUES (val1,val2,...) -- to insert values in a table");
@@ -48,6 +47,10 @@ class Main {
         String[] tokens = command.split("[(\\s)]+");
         String tableName = tokens[2];
         String columnsDefinition = command.substring(command.indexOf("(") + 1, command.indexOf(")"));
+        if(columnsDefinition.isEmpty() || columnsDefinition.matches("\\s+")){
+            System.out.println("Columns cannot be empty");
+            return;
+        }
 
         if (tableExists(tableName)) {
             System.out.println("Table already exists: " + tableName);
@@ -77,8 +80,11 @@ class Main {
 
         // Create an ArrayList to store the extracted values
         ArrayList<String> extractedValues = getStrings(command, pattern);
+        System.out.println(extractedValues);
+        System.out.println(extractedValues.isEmpty());
+        System.out.println(extractedValues.size());
 
-        if(extractedValues.isEmpty()){
+        if(extractedValues.isEmpty() || (extractedValues.size() == 1 && Objects.equals(extractedValues.get(0), ""))) {
             System.out.println("No values to insert");
             return;
         }
@@ -115,7 +121,9 @@ class Main {
         while (matcher.find()) {
             String extractedValue = matcher.group(1);// Group 1 contains the value between parentheses
 //            System.out.println(extractedValue);
-            extractedValues.add(extractedValue);
+            if( !extractedValue.matches("\\s+")) {
+                extractedValues.add(extractedValue);
+            }
         }
         return extractedValues;
     }
