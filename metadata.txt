@@ -1,5 +1,2 @@
 table1,col1 INTEGER,col2 STRING
-table2,col1 STRING,col2 STRING
-table3,col1 STRING,col2 STRING
-table21,col1 INTEGER,col2 STRING
-
+table2,col1 INTEGER,col2 STRING

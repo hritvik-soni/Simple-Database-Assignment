@@ -2,9 +2,10 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 class Main {
-    private static final String DATABASE_PATH = "database.txt";
+    private static final String TABLE_DIR_PATH= "tables";
     private static final String METADATA_PATH = "metadata.txt";
 
     public static void main(String[] args) throws IOException {
@@ -74,17 +75,7 @@ class Main {
         Pattern pattern = Pattern.compile("\\((.*?)\\)");
 
         // Create an ArrayList to store the extracted values
-        ArrayList<String> extractedValues = new ArrayList<>();
-
-        // Create a Matcher for the input string
-        Matcher matcher = pattern.matcher(command);
-
-        // Find and store values in the ArrayList
-        while (matcher.find()) {
-            String extractedValue = matcher.group(1);// Group 1 contains the value between parentheses
-            System.out.println(extractedValue);
-            extractedValues.add(extractedValue);
-        }
+        ArrayList<String> extractedValues = getStrings(command, pattern);
 
         if(extractedValues.isEmpty()){
             System.out.println("No values to insert");
@@ -92,16 +83,17 @@ class Main {
         }
 
         for (String value : extractedValues) {
-           String valueLength= value.replaceAll(",", "");
-            if (columnsCount(tableName) < valueLength.length()) {
-                System.out.println("Invalid number of values: "+ value+ " Length: "+ valueLength.length() + " ,Allowed: " + columnsCount(tableName));
+            String [] valSplit = value.split(",");
+           int  valueLength= valSplit.length;
+            if (columnsCount(tableName) < valueLength) {
+                System.out.println("Invalid number of values: "+ value+ " Length: "+ valueLength + " ,Allowed: " + columnsCount(tableName));
 
             }
-            else if(columnsCount(tableName) > valueLength.length()){
-                System.out.println("Invalid number of values: "+ value+ " Length: "+ valueLength.length() + " ,Allowed: " + columnsCount(tableName));
+            else if(columnsCount(tableName) > valueLength){
+                System.out.println("Invalid number of values: "+ value+ " Length: "+ valueLength + " ,Allowed: " + columnsCount(tableName));
             }
             else{
-                try (PrintWriter tableWriter = new PrintWriter(new FileWriter(DATABASE_PATH, true))) {
+                try (PrintWriter tableWriter = new PrintWriter(new FileWriter(TABLE_DIR_PATH + File.separator + tableName + ".txt", true))) {
                     tableWriter.println(tableName + "," + value);
                     System.out.println("Values inserted successfully: " + "table: " + tableName + " , values: " + value);
                 } catch (IOException e) {
@@ -110,6 +102,21 @@ class Main {
             }
         }
 
+    }
+
+    private static ArrayList<String> getStrings(String command, Pattern pattern) {
+        ArrayList<String> extractedValues = new ArrayList<>();
+
+        // Create a Matcher for the input string
+        Matcher matcher = pattern.matcher(command);
+
+        // Find and store values in the ArrayList
+        while (matcher.find()) {
+            String extractedValue = matcher.group(1);// Group 1 contains the value between parentheses
+//            System.out.println(extractedValue);
+            extractedValues.add(extractedValue);
+        }
+        return extractedValues;
     }
 
     private static int columnsCount(String tableName) {
@@ -135,28 +142,14 @@ class Main {
         }
 
         try (BufferedReader metadataReader = new BufferedReader(new FileReader(METADATA_PATH));
-             BufferedReader dataReader = new BufferedReader(new FileReader(DATABASE_PATH))) {
+             BufferedReader dataReader = new BufferedReader(new FileReader(TABLE_DIR_PATH + File.separator + tableName + ".txt"))) {
 
             String metadataLine;
             while ((metadataLine = metadataReader.readLine()) != null) {
                 String[] metadataParts = metadataLine.split(",");
                 if (metadataParts[0].equals(tableName)) {
 
-                    printData(metadataParts);
-
-                    String dataLine;
-                    boolean flag = false;
-                    while ((dataLine = dataReader.readLine()) != null) {
-                        String[] dataParts = dataLine.split(",");
-
-                        if (dataParts[0].equals(tableName)) {
-                            System.out.println("Data: " + Arrays.toString(Arrays.copyOfRange(dataParts, 1, dataParts.length)));
-                             flag=true;
-                        }
-                    }
-                    if (!flag){
-                        System.out.println("Data: [null]");
-                    }
+                    printTableData(dataReader, tableName, metadataParts);
                     return;
                 }
             }
@@ -169,45 +162,35 @@ class Main {
 
     private static void showAllTables() {
 
-        try (BufferedReader metadataReader = new BufferedReader(new FileReader(METADATA_PATH));
-             BufferedReader dataReader = new BufferedReader(new FileReader(DATABASE_PATH))) {
+       File[] tableNames = new File(TABLE_DIR_PATH).listFiles();
+       if(tableNames == null){
+           System.out.println("No tables found");
+           return;
+       }
+        for(File tableName : tableNames) {
+            System.out.println(tableName);
+           String tname= tableName.toString().substring(7, tableName.toString().length()-4);
+           try (BufferedReader metadataReader = new BufferedReader(new FileReader(METADATA_PATH));
+                BufferedReader dataReader = new BufferedReader(new FileReader(tableName.toString()))) {
 
-            Map<String, List<String>> tableData = new HashMap<>();
+               String metadataLine;
+               while ((metadataLine = metadataReader.readLine()) != null) {
+                   String[] metadataParts = metadataLine.split(",");
+                   if (metadataParts[0].equals(tname)) {
+                       printTableData(dataReader, tname, metadataParts);
+                       System.out.println();
+                   }
+               }
 
-            // Read and store data for each table
-            String dataLine;
-            while ((dataLine = dataReader.readLine()) != null) {
-                String[] dataParts = dataLine.split(",");
-                String tableName = dataParts[0];
-                List<String> tableValues = Arrays.asList(Arrays.copyOfRange(dataParts, 1, dataParts.length));
-
-                tableData.computeIfAbsent(tableName, k -> new ArrayList<>()).add("Data: " + tableValues);
-            }
-
-            String metadataLine;
-            while ((metadataLine = metadataReader.readLine()) != null) {
-                String[] metadataParts = metadataLine.split(",");
-                String tableName = metadataParts[0];
-                printData(metadataParts);
-                // Print data for the current table
-                List<String> storedData = tableData.get(tableName);
-                if (storedData != null) {
-                    storedData.forEach(System.out::println);
-                }
-                else {
-                    System.out.println("Data: [null]");
-                }
-                System.out.println();
-            }
-
-        }
-         catch (IOException e) {
-            System.err.println("Error showing all tables: " + e.getMessage());
-        }
+           } catch (IOException e) {
+               System.err.println("Error showing all tables: " + e.getMessage());
+           }
+       }
         return;
     }
 
-    private static void printData(String[] metadataParts) {
+    private static void printTableData(BufferedReader dataReader, String tname, String[] metadataParts) throws IOException {
+
         System.out.println("Table: " + metadataParts[0]);
         StringBuilder columns= new StringBuilder("Columns :");
         for(int i = 1; i < metadataParts.length; i++){
@@ -219,8 +202,20 @@ class Main {
         }
         System.out.println(columns);
 
-    }
+        String dataLine;
+        boolean flag = false;
+        while ((dataLine = dataReader.readLine()) != null) {
+            String[] dataParts = dataLine.split(",");
 
+            if (dataParts[0].equals(tname)) {
+                System.out.println("Data: " + Arrays.toString(Arrays.copyOfRange(dataParts, 1, dataParts.length)));
+                flag=true;
+            }
+        }
+        if (!flag){
+            System.out.println("Data: [null]");
+        }
+    }
 
     private static boolean tableExists(String tableName) {
         try (BufferedReader metadataReader = new BufferedReader(new FileReader(METADATA_PATH))) {

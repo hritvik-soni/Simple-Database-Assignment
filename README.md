@@ -40,7 +40,11 @@ Here are some example commands you can try:
     ```
   
 ## File Structure
-The program uses two files:
-metadata.txt: Stores the metadata of the tables created.<br>
-database.txt: Stores the records inserted into each table.<br>
-Make sure both files are present in the same directory as the Java source file.
+The program uses 1 files and 1 folder:<br>
+- metadata.txt: Stores the metadata of the tables created.<br>
+- tables folder: Stores the .txt files which are created by the CREATE Command for the Tables And inserts records in those files according to table name of each Table using INSERT Command and read data from <table_name>.txt files according to table name of each Table using SHOW Command<br>
+- Make sure both metadata.txt and tables folder are present in the same directory as the Java source file.
+
+
+##
+Happy Coding!
