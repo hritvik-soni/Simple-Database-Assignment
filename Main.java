@@ -46,14 +46,13 @@ class Main {
         // Implement the logic to parse and execute the create table command
         String[] tokens = command.split("[(\\s)]+");
         String tableName = tokens[2];
+        if (tableExists(tableName)) {
+            System.out.println("Table already exists: " + tableName);
+            return;
+        }
         String columnsDefinition = command.substring(command.indexOf("(") + 1, command.indexOf(")"));
         if(columnsDefinition.isEmpty() || columnsDefinition.matches("\\s+")){
             System.out.println("Columns cannot be empty");
-            return;
-        }
-
-        if (tableExists(tableName)) {
-            System.out.println("Table already exists: " + tableName);
             return;
         }
 
@@ -80,9 +79,6 @@ class Main {
 
         // Create an ArrayList to store the extracted values
         ArrayList<String> extractedValues = getStrings(command, pattern);
-        System.out.println(extractedValues);
-        System.out.println(extractedValues.isEmpty());
-        System.out.println(extractedValues.size());
 
         if(extractedValues.isEmpty() || (extractedValues.size() == 1 && Objects.equals(extractedValues.get(0), ""))) {
             System.out.println("No values to insert");
@@ -147,6 +143,10 @@ class Main {
 
         if(tableName.isEmpty()){
             System.out.println("Table name cannot be empty");
+            return;
+        }
+        if(!tableExists(tableName)){
+            System.out.println("Table not found: " + tableName);
             return;
         }
 
